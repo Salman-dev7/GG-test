@@ -1,8 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { format, addDays, isSameDay } from 'date-fns';
 import { Habit, Checkin } from '../types';
 import GlassCard from './GlassCard';
-// Added 'X' to the imports from lucide-react
 import { Check, Plus, Calendar, Filter, X } from 'lucide-react';
 
 interface TodayViewProps {
@@ -17,13 +16,32 @@ interface TodayViewProps {
 const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAddClick, accentColor }) => {
   const [selectedDate, setSelectedDate] = useState(new Date(new Date().setHours(0, 0, 0, 0)));
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dateISO = format(selectedDate, 'yyyy-MM-dd');
 
+  // Generate days array with selected date in the middle
   const days = useMemo(() => {
     const windowSize = 60;
-    const startDate = addDays(selectedDate, -Math.floor(windowSize / 2));
+    const halfWindow = Math.floor(windowSize / 2);
+    const startDate = addDays(selectedDate, -halfWindow);
     return Array.from({ length: windowSize }).map((_, i) => addDays(startDate, i));
   }, [selectedDate]);
+
+  // Scroll to center the selected date
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const container = scrollContainerRef.current;
+      const dayWidth = 46; // 42px min-width + 4px gap (approximate)
+      const containerWidth = container.clientWidth;
+      const halfWindow = Math.floor(days.length / 2);
+      const scrollPosition = (halfWindow * dayWidth) - (containerWidth / 2) + (dayWidth / 2);
+      
+      container.scrollTo({
+        left: scrollPosition,
+        behavior: 'smooth'
+      });
+    }
+  }, [selectedDate, days.length]);
 
   const filteredHabits = useMemo(() => {
     const dayName = format(selectedDate, 'EEE');
@@ -70,7 +88,10 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
         </div>
       </header>
 
-      <div className="flex space-x-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4">
+      <div 
+        ref={scrollContainerRef}
+        className="flex space-x-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4"
+      >
         {days.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
           return (
