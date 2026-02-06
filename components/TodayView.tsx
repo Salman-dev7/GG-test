@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo } from 'react';
 import { format, addDays, isSameDay } from 'date-fns';
 import { Habit, Checkin } from '../types';
 import GlassCard from './GlassCard';
@@ -15,13 +15,14 @@ interface TodayViewProps {
 
 const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAddClick, accentColor }) => {
   const [selectedDate, setSelectedDate] = useState(new Date(new Date().setHours(0, 0, 0, 0)));
-  const dateInputRef = useRef<HTMLInputElement>(null);
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const dateISO = format(selectedDate, 'yyyy-MM-dd');
 
   const days = useMemo(() => {
-    const today = new Date(new Date().setHours(0, 0, 0, 0));
-    return Array.from({ length: 14 }).map((_, i) => addDays(today, i - 3));
-  }, []);
+    const windowSize = 3651;
+    const startDate = addDays(selectedDate, -Math.floor(windowSize / 2));
+    return Array.from({ length: windowSize }).map((_, i) => addDays(startDate, i));
+  }, [selectedDate]);
 
   const filteredHabits = useMemo(() => {
     const dayName = format(selectedDate, 'EEE');
@@ -33,13 +34,7 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
   };
 
   const handleCalendarClick = () => {
-    if (dateInputRef.current) {
-      if (typeof (dateInputRef.current as any).showPicker === 'function') {
-        (dateInputRef.current as any).showPicker();
-      } else {
-        dateInputRef.current.click();
-      }
-    }
+    setIsCalendarOpen(true);
   };
 
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -48,6 +43,7 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
       const newDate = new Date(parts[0], parts[1] - 1, parts[2]);
       newDate.setHours(0, 0, 0, 0);
       setSelectedDate(newDate);
+      setIsCalendarOpen(false);
     }
   };
 
@@ -67,13 +63,6 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
           >
             <Calendar size={18} />
           </button>
-          <input 
-            type="date" 
-            ref={dateInputRef} 
-            onChange={handleDateChange} 
-            className="sr-only" 
-            value={dateISO}
-          />
           <button className="w-9 h-9 rounded-full glass flex items-center justify-center text-current active:scale-90 transition-transform">
             <Filter size={18} />
           </button>
@@ -157,6 +146,40 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
       >
         <Plus size={26} strokeWidth={2.5} />
       </button>
+
+      {isCalendarOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 py-6">
+          <div className="w-full max-w-sm rounded-3xl glass p-5 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <p className="text-[10px] uppercase tracking-[0.3em] font-black opacity-60">Select date</p>
+                <h2 className="text-lg font-extrabold">Jump to day</h2>
+              </div>
+              <button
+                onClick={() => setIsCalendarOpen(false)}
+                className="text-[10px] font-black uppercase tracking-[0.3em] opacity-60"
+              >
+                Close
+              </button>
+            </div>
+            <input
+              type="date"
+              value={dateISO}
+              onChange={handleDateChange}
+              className="w-full rounded-2xl px-4 py-3 text-sm font-semibold bg-white/10 text-current"
+            />
+            <button
+              className="mt-4 w-full rounded-2xl py-3 text-[10px] font-black uppercase tracking-[0.3em] glass"
+              onClick={() => {
+                setSelectedDate(new Date(new Date().setHours(0, 0, 0, 0)));
+                setIsCalendarOpen(false);
+              }}
+            >
+              Today
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
