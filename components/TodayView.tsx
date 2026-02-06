@@ -19,7 +19,7 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
   const dateISO = format(selectedDate, 'yyyy-MM-dd');
 
   const days = useMemo(() => {
-    const windowSize = 3651;
+    const windowSize = 61;
     const startDate = addDays(selectedDate, -Math.floor(windowSize / 2));
     return Array.from({ length: windowSize }).map((_, i) => addDays(startDate, i));
   }, [selectedDate]);
@@ -148,8 +148,8 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
       </button>
 
       {isCalendarOpen && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/60 px-4 py-6">
-          <div className="w-full max-w-sm rounded-3xl glass p-5 max-h-[80vh] overflow-y-auto">
+        <div className="fixed inset-0 z-[120] flex items-end justify-center bg-black/60 px-4 pb-24 pt-6">
+          <div className="w-full max-w-sm rounded-3xl glass p-5">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.3em] font-black opacity-60">Select date</p>
