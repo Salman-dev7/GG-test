@@ -17,31 +17,65 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
   const [selectedDate, setSelectedDate] = useState(new Date(new Date().setHours(0, 0, 0, 0)));
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const isScrollingProgrammatically = useRef(false);
+  const scrollTimeout = useRef<NodeJS.Timeout | null>(null);
   const dateISO = format(selectedDate, 'yyyy-MM-dd');
 
   // Generate days array with selected date in the middle
   const days = useMemo(() => {
-    const windowSize = 60;
+    const windowSize = 120; // Increased for better scrolling experience
     const halfWindow = Math.floor(windowSize / 2);
     const startDate = addDays(selectedDate, -halfWindow);
     return Array.from({ length: windowSize }).map((_, i) => addDays(startDate, i));
   }, [selectedDate]);
 
+  const DAY_WIDTH = 46; // 42px min-width + 4px gap
+
   // Scroll to center the selected date
   useEffect(() => {
-    if (scrollContainerRef.current) {
+    if (scrollContainerRef.current && !isScrollingProgrammatically.current) {
       const container = scrollContainerRef.current;
-      const dayWidth = 46; // 42px min-width + 4px gap (approximate)
       const containerWidth = container.clientWidth;
       const halfWindow = Math.floor(days.length / 2);
-      const scrollPosition = (halfWindow * dayWidth) - (containerWidth / 2) + (dayWidth / 2);
+      const scrollPosition = (halfWindow * DAY_WIDTH) - (containerWidth / 2) + (DAY_WIDTH / 2);
       
+      isScrollingProgrammatically.current = true;
       container.scrollTo({
         left: scrollPosition,
         behavior: 'smooth'
       });
+      
+      setTimeout(() => {
+        isScrollingProgrammatically.current = false;
+      }, 500);
     }
   }, [selectedDate, days.length]);
+
+  // Handle scroll to update selected date based on center position
+  const handleScroll = () => {
+    if (isScrollingProgrammatically.current) return;
+    
+    if (scrollTimeout.current) {
+      clearTimeout(scrollTimeout.current);
+    }
+
+    scrollTimeout.current = setTimeout(() => {
+      if (scrollContainerRef.current) {
+        const container = scrollContainerRef.current;
+        const scrollLeft = container.scrollLeft;
+        const containerWidth = container.clientWidth;
+        const centerPosition = scrollLeft + (containerWidth / 2);
+        const centerIndex = Math.round(centerPosition / DAY_WIDTH);
+        
+        if (centerIndex >= 0 && centerIndex < days.length) {
+          const centerDate = days[centerIndex];
+          if (!isSameDay(centerDate, selectedDate)) {
+            setSelectedDate(centerDate);
+          }
+        }
+      }
+    }, 100);
+  };
 
   const filteredHabits = useMemo(() => {
     const dayName = format(selectedDate, 'EEE');
@@ -64,6 +98,10 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
       setSelectedDate(newDate);
       setIsCalendarOpen(false);
     }
+  };
+
+  const handleDayClick = (day: Date) => {
+    setSelectedDate(day);
   };
 
   return (
@@ -90,15 +128,17 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
 
       <div 
         ref={scrollContainerRef}
-        className="flex space-x-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4"
+        onScroll={handleScroll}
+        className="flex space-x-2 overflow-x-auto no-scrollbar py-1 -mx-4 px-4 snap-x snap-mandatory"
+        style={{ scrollSnapType: 'x mandatory' }}
       >
         {days.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
           return (
             <button
               key={idx}
-              onClick={() => setSelectedDate(day)}
-              className={`flex flex-col items-center min-w-[42px] py-3 rounded-[20px] transition-all duration-300 ${
+              onClick={() => handleDayClick(day)}
+              className={`flex flex-col items-center min-w-[42px] py-3 rounded-[20px] transition-all duration-300 snap-center ${
                 isSelected 
                   ? 'text-white ios-shadow scale-105' 
                   : 'glass opacity-60'
