@@ -11,8 +11,8 @@ interface State {
 }
 
 // ErrorBoundary component to catch UI crashes and show a fallback view.
-// Fix: Use direct inheritance from Component to ensure 'props' is correctly typed in the class.
-export class ErrorBoundary extends Component<Props, State> {
+// Fix: Explicitly use React.Component to ensure the 'props' property is correctly inherited and typed.
+export class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false
   };
@@ -44,7 +44,7 @@ export class ErrorBoundary extends Component<Props, State> {
       );
     }
 
-    // Access children through this.props
+    // Access children through this.props, which is now correctly inherited from React.Component
     return this.props.children;
   }
 }
