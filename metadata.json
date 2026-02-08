@@ -1,0 +1,5 @@
+{
+  "name": "Aura Habit Tracker",
+  "description": "A premium iOS-inspired habit tracker with Liquid Glass aesthetics, offline persistence, and immersive PWA features.",
+  "requestFramePermissions": []
+}
