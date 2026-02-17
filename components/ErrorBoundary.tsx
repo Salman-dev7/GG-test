@@ -1,5 +1,5 @@
 
-import React, { Component, ErrorInfo, ReactNode } from 'react';
+import React, { ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -11,7 +11,7 @@ interface State {
 }
 
 // ErrorBoundary component to catch UI crashes and show a fallback view.
-// Fix: Explicitly use React.Component to ensure the 'props' property is correctly inherited and typed.
+// Fix: Use React.Component<Props, State> explicitly to ensure the 'props' property is correctly inherited from the base class.
 export class ErrorBoundary extends React.Component<Props, State> {
   public state: State = {
     hasError: false
@@ -44,7 +44,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
       );
     }
 
-    // Access children through this.props, which is now correctly inherited from React.Component
+    // Access children through this.props.
     return this.props.children;
   }
 }

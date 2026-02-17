@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark-mode">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="theme-color" content="#000000">
+    <meta name="theme-color" content="#0A0A0A">
     <title>Aura Habit Tracker</title>
     <link rel="manifest" href="/manifest.json">
     <script src="https://cdn.tailwindcss.com"></script>
@@ -16,20 +16,9 @@
         :root {
             --ios-safe-top: env(safe-area-inset-top, 20px);
             --ios-safe-bottom: env(safe-area-inset-bottom, 20px);
-            --bg: #FFFFFF;
-            --fg: #0F172A;
-            --accent: #9C38FF;
-            --glass-bg: rgba(255, 255, 255, 0.5);
-            --glass-border: rgba(255, 255, 255, 0.4);
-            --glass-shadow: rgba(31, 38, 135, 0.08);
-        }
-
-        .dark-mode {
-            --bg: #000000;
+            --bg: #0A0A0A;
             --fg: #FFFFFF;
-            --glass-bg: rgba(30, 30, 40, 0.4);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --glass-shadow: rgba(0, 0, 0, 0.4);
+            --accent: #FF385C;
         }
 
         body {
@@ -40,39 +29,15 @@
             margin: 0;
             overflow: hidden;
             -webkit-tap-highlight-color: transparent;
+            -webkit-font-smoothing: antialiased;
             user-select: none;
-            transition: background-color 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            /* Responsive Scaling: 8.5px for mobile, 11px for desktop */
-            font-size: 8.5px;
-        }
-
-        @media (min-width: 1024px) {
-            body {
-                font-size: 11px;
-            }
-        }
-
-        .glass {
-            background: var(--glass-bg);
-            backdrop-filter: blur(24px) saturate(180%);
-            -webkit-backdrop-filter: blur(24px) saturate(180%);
-            border: 0.5px solid var(--glass-border);
-            box-shadow: 0 6px 24px 0 var(--glass-shadow);
-        }
-
-        .ios-shadow {
-            box-shadow: 0 10px 30px -10px var(--glass-shadow);
         }
 
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         
-        @keyframes checkmark {
-            0% { transform: scale(0.6); opacity: 0; }
-            50% { transform: scale(1.1); }
-            100% { transform: scale(1); opacity: 1; }
-        }
-        .animate-checkmark { animation: checkmark 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
+        @keyframes fade-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .animate-fade-in { animation: fade-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards; }
     </style>
 <script type="importmap">
 {

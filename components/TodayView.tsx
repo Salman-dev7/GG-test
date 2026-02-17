@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
-import { format, addDays, isSameDay } from 'date-fns';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { format, addDays, isSameDay, differenceInDays } from 'date-fns';
 import { Habit, Checkin } from '../types';
 import GlassCard from './GlassCard';
-import { Check, Plus, Calendar, Filter, X, Menu } from 'lucide-react';
+import { Check, Plus, Calendar, Filter, X, Menu, PanelLeft } from 'lucide-react';
 
 interface TodayViewProps {
   habits: Habit[];
@@ -12,18 +12,51 @@ interface TodayViewProps {
   onAddClick: () => void;
   accentColor: string;
   onMenuClick?: () => void;
+  onSidebarToggle?: () => void;
+  isSidebarVisible?: boolean;
 }
 
-const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAddClick, accentColor, onMenuClick }) => {
+const TodayView: React.FC<TodayViewProps> = ({ 
+  habits, 
+  checkins, 
+  onToggle, 
+  onAddClick, 
+  accentColor, 
+  onMenuClick, 
+  onSidebarToggle,
+  isSidebarVisible 
+}) => {
   const [selectedDate, setSelectedDate] = useState(new Date(new Date().setHours(0, 0, 0, 0)));
+  const [viewAnchor, setViewAnchor] = useState(new Date(new Date().setHours(0, 0, 0, 0)));
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const dateISO = format(selectedDate, 'yyyy-MM-dd');
 
+  // Stable date range centered around the anchor
   const days = useMemo(() => {
-    const windowSize = 40;
-    const startDate = addDays(selectedDate, -Math.floor(windowSize / 2));
+    const windowSize = 60; // Large enough to cover a month either side
+    const startDate = addDays(viewAnchor, -20); 
     return Array.from({ length: windowSize }).map((_, i) => addDays(startDate, i));
-  }, [selectedDate]);
+  }, [viewAnchor]);
+
+  // If selected date is outside current range, update the anchor to stabilize
+  useEffect(() => {
+    const start = days[0];
+    const end = days[days.length - 1];
+    if (selectedDate < start || selectedDate > end) {
+      setViewAnchor(selectedDate);
+    }
+  }, [selectedDate, days]);
+
+  // Auto-scroll the selected date into view
+  useEffect(() => {
+    if (scrollContainerRef.current) {
+      const selectedEl = scrollContainerRef.current.querySelector('[data-selected="true"]');
+      if (selectedEl) {
+        selectedEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }
+  }, [selectedDate, days]);
 
   const filteredHabits = useMemo(() => {
     const dayName = format(selectedDate, 'EEE');
@@ -49,8 +82,8 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
   };
 
   return (
-    <div className="h-full flex flex-col px-4 lg:px-10 space-y-4 lg:space-y-6 pt-3 lg:pt-8">
-      <header className="flex justify-between items-center mb-1">
+    <div className="h-full flex flex-col px-4 lg:px-10 space-y-4 lg:space-y-6 pt-3 lg:pt-8 overflow-hidden">
+      <header className="flex justify-between items-center mb-1 shrink-0">
         <div className="flex items-center space-x-4">
           <button 
             onClick={onMenuClick}
@@ -58,6 +91,15 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
           >
             <Menu size={18} />
           </button>
+
+          <button 
+            onClick={onSidebarToggle}
+            className={`hidden lg:flex w-11 h-11 rounded-2xl glass items-center justify-center transition-all duration-300 active:scale-90 ${!isSidebarVisible ? 'bg-white/20' : ''}`}
+            style={{ color: !isSidebarVisible ? accentColor : undefined }}
+          >
+            <PanelLeft size={20} strokeWidth={2.5} />
+          </button>
+
           <div className="flex flex-col">
             <h1 className="text-2xl lg:text-4xl font-extrabold tracking-tight">Today</h1>
             <p className="opacity-40 text-[9px] lg:text-[11px] font-black uppercase tracking-[0.2em]">
@@ -78,21 +120,29 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
         </div>
       </header>
 
-      {/* Date Horizontal Selector */}
-      <div className="flex space-x-2 lg:space-x-3 overflow-x-auto no-scrollbar py-1.5 -mx-4 px-4 shrink-0">
+      {/* Stable Date Horizontal Selector */}
+      <div 
+        ref={scrollContainerRef}
+        className="flex space-x-2 lg:space-x-3 overflow-x-auto no-scrollbar py-1.5 -mx-4 px-4 shrink-0 scroll-smooth"
+      >
         {days.map((day, idx) => {
           const isSelected = isSameDay(day, selectedDate);
+          const isT = isToday(day);
           return (
             <button
               key={idx}
+              data-selected={isSelected}
               onClick={() => setSelectedDate(day)}
-              className={`flex flex-col items-center min-w-[42px] lg:min-w-[54px] py-3 lg:py-4 rounded-[20px] lg:rounded-[26px] transition-all duration-300 ${
+              className={`flex flex-col items-center min-w-[44px] lg:min-w-[56px] py-3 lg:py-4 rounded-[20px] lg:rounded-[26px] transition-all duration-300 relative ${
                 isSelected 
-                  ? 'text-white ios-shadow scale-105' 
+                  ? 'text-white ios-shadow scale-105 z-10' 
                   : 'glass opacity-60 hover:opacity-100 hover:bg-white/5'
               }`}
               style={{ backgroundColor: isSelected ? accentColor : undefined }}
             >
+              {isT && !isSelected && (
+                <div className="absolute top-1.5 w-1 h-1 rounded-full bg-current opacity-40"></div>
+              )}
               <span className={`text-[7px] lg:text-[8px] uppercase font-black mb-1 ${isSelected ? 'text-white/80' : 'opacity-40'}`}>
                 {format(day, 'EEE')}
               </span>
@@ -102,9 +152,10 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
         })}
       </div>
 
-      <div className="flex-1 overflow-y-auto no-scrollbar pb-32 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0">
+      {/* Main Habit List */}
+      <div className="flex-1 overflow-y-auto no-scrollbar pb-32 space-y-3 lg:grid lg:grid-cols-2 lg:gap-4 lg:space-y-0 lg:content-start">
         {filteredHabits.length === 0 ? (
-          <GlassCard className="lg:col-span-2 mt-4 py-12 flex flex-col items-center justify-center border-dashed border-2 border-white/10 bg-transparent">
+          <GlassCard className="lg:col-span-2 mt-4 py-12 flex flex-col items-center justify-center border-dashed border-2 border-white/10 bg-transparent h-fit">
             <div className="w-16 h-16 rounded-full flex items-center justify-center text-3xl mb-4 bg-white/5">
               ✨
             </div>
@@ -125,7 +176,7 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
               <GlassCard 
                 key={habit.id} 
                 onClick={() => onToggle(habit.id, dateISO, !isCompleted)} 
-                className={`transition-all p-3 lg:p-4 rounded-[24px] lg:rounded-[32px] ${isCompleted ? 'opacity-40 grayscale-[0.2] scale-[0.98]' : 'hover:scale-[1.01]'}`}
+                className={`transition-all p-3 lg:p-4 rounded-[24px] lg:rounded-[32px] h-fit ${isCompleted ? 'opacity-40 grayscale-[0.2] scale-[0.98]' : 'hover:scale-[1.01]'}`}
               >
                 <div className="flex items-center space-x-4 lg:space-x-5">
                   <div className={`w-11 h-11 lg:w-14 lg:h-14 rounded-[18px] lg:rounded-[22px] flex items-center justify-center text-white text-2xl lg:text-3xl ios-shadow transition-all duration-500 ${isCompleted ? 'scale-90 rotate-6 opacity-40' : ''}`} style={{ backgroundColor: habit.color }}>
@@ -153,6 +204,7 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
         )}
       </div>
 
+      {/* Floating Add Button */}
       <button 
         className="fixed bottom-20 lg:bottom-12 right-6 lg:right-12 w-12 h-12 lg:w-16 lg:h-16 rounded-[22px] lg:rounded-[28px] ios-shadow flex items-center justify-center text-white transition-all hover:scale-110 active:scale-90 z-[150]"
         style={{ backgroundColor: accentColor }}
@@ -192,7 +244,9 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
                 className="w-full rounded-[18px] lg:rounded-[22px] py-3 lg:py-4 text-[9px] lg:text-[10px] font-black uppercase tracking-[0.2em] glass active:scale-95 transition-all"
                 style={{ color: accentColor }}
                 onClick={() => {
-                  setSelectedDate(new Date(new Date().setHours(0, 0, 0, 0)));
+                  const today = new Date();
+                  today.setHours(0, 0, 0, 0);
+                  setSelectedDate(today);
                   setIsCalendarOpen(false);
                 }}
               >
@@ -205,5 +259,13 @@ const TodayView: React.FC<TodayViewProps> = ({ habits, checkins, onToggle, onAdd
     </div>
   );
 };
+
+// Helper for today check inside the component
+function isToday(date: Date) {
+  const today = new Date();
+  return date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear();
+}
 
 export default TodayView;
