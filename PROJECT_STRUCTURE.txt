@@ -1,0 +1,14 @@
+- index.tsx — Application entry point, React root initialization, and service worker registration.
+- index.html — Main HTML template with obsidian-dark styles and Tailwind configuration.
+- types.ts — Centralized TypeScript interfaces for Habits, Checkins, and application state.
+- storage.ts — Storage provider abstraction and singleton instance export.
+- storage-indexeddb.ts — Concrete IndexedDB implementation for high-performance offline persistence.
+- app/App.tsx — Root component managing navigation state, data syncing, and page routing.
+- app/AppShell.tsx — Master layout containing the sidebar, top navigation, and responsive mobile drawer.
+- pages/today/TodayPage.tsx — Primary dashboard for daily protocol check-ins and date navigation.
+- pages/today/AddHabitModal.tsx — Localized form component for configuring and activating new protocols.
+- pages/habits/HabitsPage.tsx — Grid-based overview of all habits with weekly completion status markers.
+- pages/calendar/CalendarPage.tsx — Monthly chronology view with heatmaps and consistency statistics.
+- pages/settings/SettingsPage.tsx — System configuration for visual themes, accent colors, and app info.
+- services/streak-service.ts — Business logic for algorithmic streak and success rate calculations.
+- db.ts & db-seed.ts — Legacy database compatibility layer and initial data seeding logic.
